@@ -1,0 +1,426 @@
+{
+ "l_sofa": {
+  "w": 7.36,
+  "h": 2.76,
+  "d": 4.99,
+  "tris": 82512,
+  "kb": 993,
+  "source": "sketchfab"
+ },
+ "side_table_marble": {
+  "w": 1.72,
+  "h": 1.45,
+  "d": 1.73,
+  "tris": 15240,
+  "kb": 146,
+  "source": "sketchfab"
+ },
+ "coffee_table_cane": {
+  "w": 2.31,
+  "h": 1.4,
+  "d": 3.6,
+  "tris": 7408,
+  "kb": 274,
+  "source": "sketchfab"
+ },
+ "tv_console_fluted": {
+  "w": 5.91,
+  "h": 2.03,
+  "d": 1.6,
+  "tris": 49456,
+  "kb": 610,
+  "source": "sketchfab"
+ },
+ "sideboard_teak": {
+  "w": 5,
+  "h": 2.36,
+  "d": 1.46,
+  "tris": 21794,
+  "kb": 367,
+  "source": "sketchfab"
+ },
+ "floor_lamp_drum": {
+  "w": 2.8,
+  "h": 5.4,
+  "d": 2.21,
+  "tris": 67861,
+  "kb": 1334,
+  "source": "sketchfab"
+ },
+ "plant_monstera": {
+  "w": 2.68,
+  "h": 4.2,
+  "d": 2.44,
+  "tris": 9310,
+  "kb": 788,
+  "source": "sketchfab"
+ },
+ "plant_pothos": {
+  "w": 2.51,
+  "h": 2.4,
+  "d": 2.95,
+  "tris": 15744,
+  "kb": 410,
+  "source": "sketchfab"
+ },
+ "curtain_sheer": {
+  "w": 5.92,
+  "h": 8,
+  "d": 1.76,
+  "tris": 32952,
+  "kb": 337,
+  "source": "sketchfab"
+ },
+ "pendant_glass_brass": {
+  "w": 0.75,
+  "h": 2.99,
+  "d": 0.75,
+  "tris": 9314,
+  "kb": 146,
+  "source": "sketchfab"
+ },
+ "bed_storage": {
+  "w": 5.6,
+  "h": 3.11,
+  "d": 6.85,
+  "tris": 101776,
+  "kb": 655,
+  "source": "sketchfab"
+ },
+ "bedside_andrea": {
+  "w": 2.26,
+  "h": 1.85,
+  "d": 1.79,
+  "tris": 14224,
+  "kb": 308,
+  "source": "sketchfab"
+ },
+ "bench_ottoman": {
+  "w": 4.79,
+  "h": 1.48,
+  "d": 1.15,
+  "tris": 6350,
+  "kb": 98,
+  "source": "sketchfab"
+ },
+ "mandir_teak": {
+  "w": 4,
+  "h": 4.07,
+  "d": 1.43,
+  "tris": 22729,
+  "kb": 820,
+  "source": "sketchfab"
+ },
+ "hanging_chair": {
+  "w": 3.52,
+  "h": 6.3,
+  "d": 3.61,
+  "tris": 40630,
+  "kb": 558,
+  "source": "sketchfab"
+ },
+ "car_creta": {
+  "w": 6.83,
+  "h": 5.22,
+  "d": 14.14,
+  "tris": 45968,
+  "kb": 1140,
+  "source": "sketchfab"
+ },
+ "washer_front": {
+  "w": 2.08,
+  "h": 2.8,
+  "d": 1.94,
+  "tris": 43266,
+  "kb": 1319,
+  "source": "sketchfab"
+ },
+ "fridge": {
+  "w": 2.94,
+  "h": 5.9,
+  "d": 2.53,
+  "tris": 2096,
+  "kb": 98,
+  "source": "sketchfab"
+ },
+ "pressure_cooker": {
+  "w": 0.83,
+  "h": 0.8,
+  "d": 1.31,
+  "tris": 5750,
+  "kb": 165,
+  "source": "sketchfab"
+ },
+ "kettle_glass": {
+  "w": 0.91,
+  "h": 0.75,
+  "d": 0.91,
+  "tris": 6288,
+  "kb": 417,
+  "source": "sketchfab"
+ },
+ "shower_head": {
+  "w": 1,
+  "h": 0.39,
+  "d": 1,
+  "tris": 11484,
+  "kb": 116,
+  "source": "sketchfab"
+ },
+ "vanity_sink": {
+  "w": 2,
+  "h": 2.93,
+  "d": 1.14,
+  "tris": 8032,
+  "kb": 490,
+  "source": "sketchfab"
+ },
+ "office_chair": {
+  "w": 2.46,
+  "h": 3.3,
+  "d": 2.6,
+  "tris": 1234,
+  "kb": 165,
+  "source": "sketchfab"
+ },
+ "ganesha": {
+  "w": 0.88,
+  "h": 1.5,
+  "d": 0.73,
+  "tris": 31968,
+  "kb": 736,
+  "source": "sketchfab"
+ },
+ "urli": {
+  "w": 1.6,
+  "h": 0.41,
+  "d": 1.6,
+  "tris": 37692,
+  "kb": 1030,
+  "source": "sketchfab"
+ },
+ "pooja_thali": {
+  "w": 0.9,
+  "h": 0.38,
+  "d": 0.9,
+  "tris": 9303,
+  "kb": 205,
+  "source": "sketchfab"
+ },
+ "toilet": {
+  "w": 1.67,
+  "h": 2.6,
+  "d": 2.12,
+  "tris": 10492,
+  "kb": 272,
+  "source": "sketchfab"
+ },
+ "modern_arm_chair_01": {
+  "w": 2.69,
+  "h": 3.36,
+  "d": 3.24,
+  "tris": 8916,
+  "kb": 340,
+  "source": "polyhaven"
+ },
+ "dining_chair_02": {
+  "w": 1.42,
+  "h": 3.19,
+  "d": 1.89,
+  "tris": 22013,
+  "kb": 332,
+  "source": "polyhaven"
+ },
+ "outdoor_table_chair_set_01": {
+  "w": 2.43,
+  "h": 2.82,
+  "d": 5.63,
+  "tris": 9828,
+  "kb": 432,
+  "source": "polyhaven"
+ },
+ "potted_plant_01": {
+  "w": 1.93,
+  "h": 4.43,
+  "d": 2.08,
+  "tris": 176226,
+  "kb": 2154,
+  "source": "polyhaven"
+ },
+ "potted_plant_02": {
+  "w": 2.3,
+  "h": 2.76,
+  "d": 2.16,
+  "tris": 69806,
+  "kb": 1046,
+  "source": "polyhaven"
+ },
+ "potted_plant_04": {
+  "w": 0.55,
+  "h": 0.88,
+  "d": 0.61,
+  "tris": 8929,
+  "kb": 412,
+  "source": "polyhaven"
+ },
+ "throw_pillows_01": {
+  "w": 3.08,
+  "h": 1.48,
+  "d": 1.48,
+  "tris": 6362,
+  "kb": 878,
+  "source": "polyhaven"
+ },
+ "ceramic_vase_01": {
+  "w": 0.67,
+  "h": 1.31,
+  "d": 0.67,
+  "tris": 10296,
+  "kb": 125,
+  "source": "polyhaven"
+ },
+ "brass_diya_lantern": {
+  "w": 0.4,
+  "h": 1.25,
+  "d": 0.4,
+  "tris": 12742,
+  "kb": 320,
+  "source": "polyhaven"
+ },
+ "ceiling_fan": {
+  "w": 4.8,
+  "h": 1.69,
+  "d": 4.8,
+  "tris": 16356,
+  "kb": 293,
+  "source": "polyhaven"
+ },
+ "brass_vase_01": {
+  "w": 0.75,
+  "h": 2.27,
+  "d": 0.75,
+  "tris": 21440,
+  "kb": 280,
+  "source": "polyhaven"
+ },
+ "brass_vase_03": {
+  "w": 0.27,
+  "h": 0.66,
+  "d": 0.27,
+  "tris": 2616,
+  "kb": 185,
+  "source": "polyhaven"
+ },
+ "brass_pot_01": {
+  "w": 0.99,
+  "h": 0.95,
+  "d": 0.99,
+  "tris": 3760,
+  "kb": 173,
+  "source": "polyhaven"
+ },
+ "brass_candleholders": {
+  "w": 3.45,
+  "h": 2.74,
+  "d": 1.2,
+  "tris": 41936,
+  "kb": 1977,
+  "source": "polyhaven"
+ },
+ "hanging_picture_frame_01": {
+  "w": 1.95,
+  "h": 2.76,
+  "d": 0.05,
+  "tris": 2586,
+  "kb": 114,
+  "source": "polyhaven"
+ },
+ "hanging_picture_frame_02": {
+  "w": 2.47,
+  "h": 1.64,
+  "d": 0.11,
+  "tris": 3678,
+  "kb": 216,
+  "source": "polyhaven"
+ },
+ "hanging_picture_frame_03": {
+  "w": 1.26,
+  "h": 1.65,
+  "d": 0.1,
+  "tris": 24348,
+  "kb": 449,
+  "source": "polyhaven"
+ },
+ "horse_statue_01": {
+  "w": 0.53,
+  "h": 0.72,
+  "d": 0.35,
+  "tris": 22388,
+  "kb": 403,
+  "source": "polyhaven"
+ },
+ "book_encyclopedia_set_01": {
+  "w": 1.81,
+  "h": 0.78,
+  "d": 0.54,
+  "tris": 67306,
+  "kb": 801,
+  "source": "polyhaven"
+ },
+ "wooden_bowl_01": {
+  "w": 1.03,
+  "h": 0.31,
+  "d": 1.01,
+  "tris": 14122,
+  "kb": 340,
+  "source": "polyhaven"
+ },
+ "ceramic_vase_02": {
+  "w": 0.72,
+  "h": 1.01,
+  "d": 0.72,
+  "tris": 11128,
+  "kb": 307,
+  "source": "polyhaven"
+ },
+ "ceramic_vase_03": {
+  "w": 0.37,
+  "h": 1.36,
+  "d": 0.37,
+  "tris": 11136,
+  "kb": 327,
+  "source": "polyhaven"
+ },
+ "planter_box_01": {
+  "w": 2.99,
+  "h": 1.39,
+  "d": 1.36,
+  "tris": 8094,
+  "kb": 372,
+  "source": "polyhaven"
+ },
+ "bed_forssa": {
+  "w": 5.6,
+  "h": 2.58,
+  "d": 5.08,
+  "tris": 47020,
+  "kb": 884,
+  "source": "sketchfab"
+ },
+ "wicker_basket_01": {
+  "w": 1.26,
+  "h": 0.39,
+  "d": 0.97,
+  "tris": 22276,
+  "kb": 522,
+  "source": "polyhaven"
+ },
+ "desk_lamp_arm_01": {
+  "w": 0.66,
+  "h": 2.93,
+  "d": 2.01,
+  "tris": 24102,
+  "kb": 571,
+  "source": "polyhaven"
+ }
+}
