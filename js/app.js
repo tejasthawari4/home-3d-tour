@@ -15,6 +15,7 @@ import { createMaterials } from './materials.js';
 import { buildHouse } from './house.js';
 import { furnish } from './furnish.js';
 import { Walk } from './walk.js';
+import { TIERS, SMALL_DECOR, probe, pickTier, fpsMonitor } from './quality.js';
 
 const params = new URLSearchParams(location.search);
 const ui = {
@@ -27,7 +28,12 @@ const setStatus = (t) => { if (ui.status) ui.status.textContent = t; };
 
 // ---------------------------------------------------------------- renderer + scene
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+// quality tier: ?q=high|mid|low overrides the device probe. Assets are fixed at load; render settings can step down.
+const device = probe(renderer.getContext());
+const detected = pickTier(device);
+const Q = { tier: TIERS[params.get('q')] ? params.get('q') : detected, auto: !TIERS[params.get('q')], device };
+Q.cur = { ...TIERS[Q.tier] };
+renderer.setPixelRatio(Math.min(devicePixelRatio, Q.cur.ratio));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -43,7 +49,7 @@ const data = await (await fetch('data/house.json')).json();
 const LV = data.meta.level;
 
 setStatus('Loading materials…');
-const M = await createMaterials(renderer);
+const M = await createMaterials(renderer, Q.cur.lite);
 const house = buildHouse(data, M);
 scene.add(house.root);
 
@@ -89,8 +95,9 @@ fills.add(hemi);
 scene.add(fills);
 
 // ---------------------------------------------------------------- furniture
-setStatus('Loading furniture…');
-const furniture = await furnish(data, M, (f) => setStatus(`Loading furniture… ${Math.round(f * 100)}%`));
+// streams in after the shell is on screen (see the end of this file)
+const furniture = furnish(data, M, (f) => setStatus(`Loading furniture… ${Math.round(f * 100)}%`),
+  { dir: Q.cur.lite ? 'assets/lite/models/' : 'assets/models/', skip: Q.cur.decor ? null : SMALL_DECOR });
 scene.add(furniture.root);
 
 // ---------------------------------------------------------------- post: MSAA render, GTAO, AgX output
@@ -148,37 +155,73 @@ function updateTourLabel() {
 }
 function stepTour(delta) {
   const i = (tourIndex() + delta + TOUR.length) % TOUR.length;
-  if (player.on) return glideTo(TOUR[i]);          // Prev / Next while playing: go there and keep playing
+  if (player.on) return goTo(TOUR[i]);             // Prev / Next while playing: walk there and keep playing
   setMode('orbit');
   setView(TOUR[i]);
 }
 
-// ---------------------------------------------------------------- guided tour: glide to each stop, hold, move on
-const GLIDE = 2.5, HOLD = 4.5;                     // seconds
-const player = { on: false, t: 0, from: null, to: null };
+// ---------------------------------------------------------------- guided tour: walk to each stop like a person
+// Between stops the camera steps out of the view, walks the precomputed route (export_web.py tour_routes: through
+// doors and up the stair, at eye height, looking ahead), then settles into the next view and holds.
+const HOLD = 4.5, GLIDE = 2.5, SETTLE = 1.4;       // seconds
+const WALK_SPEED = 5.5, EYE = 5.25, LOOK = 6;      // ft/s, ft above the floor, ft of look-ahead (turns early, like a gaze)
+const ROUTES = data.tour_routes || {};
+const player = { on: false, legs: [], leg: null, t: 0, arrived: true, started: false };
 const playBtn = document.getElementById('btn-play');
-function glideTo(name) {
-  player.from = { pos: camera.position.clone(), target: orbit.target.clone(), fov: camera.fov };
-  player.to = viewPose(name);
-  player.t = 0;
+const pose = () => ({ pos: camera.position.clone(), target: orbit.target.clone(), fov: camera.fov });
+const glideLeg = (dur, to) => ({ dur, make: () => { const from = pose(); return (t) => { const k = THREE.MathUtils.smootherstep(t, 0, 1); return {
+  pos: from.pos.clone().lerp(to.pos, k), target: from.target.clone().lerp(to.target, k), fov: from.fov + (to.fov - from.fov) * k }; }; } });
+function route(a, b) {                              // plan points [x, y, z] from stop a to stop b, or null
+  if (ROUTES[`${a}>${b}`]) return ROUTES[`${a}>${b}`];
+  return ROUTES[`${b}>${a}`] ? [...ROUTES[`${b}>${a}`]].reverse() : null;
+}
+function walkLegs(pts) {
+  const curve = new THREE.CatmullRomCurve3(pts.map(([x, y, z]) => P(x, y, z + EYE)), false, 'centripetal');
+  const L = curve.getLength(), fov = vfovFromLens(18, camera.aspect), du = (LOOK * FT) / L;
+  const at = (u) => {
+    const look = u + du <= 1 ? curve.getPointAt(u + du)
+      : curve.getPointAt(1).add(curve.getTangentAt(1).multiplyScalar((u + du - 1) * L));
+    return { pos: curve.getPointAt(u), target: look, fov };
+  };
+  return [glideLeg(SETTLE, at(0)),
+          { dur: L / FT / WALK_SPEED, walk: true, make: () => (k) => at(THREE.MathUtils.smoothstep(k, 0, 1)) }];
+}
+function goTo(name) {                               // walk there if there is a route from here, else glide
+  const pts = player.arrived && route(current.view, name);
+  player.legs = [...(pts && pts.length > 1 ? walkLegs(pts) : []), glideLeg(pts ? SETTLE : GLIDE, viewPose(name))];
+  player.leg = null;
+  player.arrived = false;
   current.view = name;
   updateTourLabel();
 }
 function playTour(on) {
   player.on = on;
   if (playBtn) { playBtn.textContent = on ? '❚❚ Pause' : '▶ Tour'; playBtn.classList.toggle('on', on); }
-  if (on) { setMode('orbit'); glideTo(TOUR[(tourIndex() + (player.started ? 1 : 0)) % TOUR.length]); }
+  if (on) {
+    setMode('orbit');
+    // resume: finish the interrupted move first; otherwise carry on to the next stop
+    goTo(player.started && player.arrived ? TOUR[(tourIndex() + 1) % TOUR.length] : current.view);
+  }
   player.started = true;
 }
 function tickTour(dt) {
   if (!player.on) return;
+  if (!player.leg) {
+    if (!player.legs.length) {                      // arrived: hold, then move on
+      player.arrived = true;
+      player.t += dt;
+      if (player.t > HOLD) goTo(TOUR[(tourIndex() + 1) % TOUR.length]);
+      return;
+    }
+    const l = player.legs.shift();
+    player.leg = { dur: l.dur, walk: !!l.walk, at: l.make() };
+    player.t = 0;
+  }
   player.t += dt;
-  if (player.t <= GLIDE) {
-    const k = THREE.MathUtils.smootherstep(player.t / GLIDE, 0, 1), { from, to } = player;
-    applyPose({ pos: from.pos.clone().lerp(to.pos, k), target: from.target.clone().lerp(to.target, k),
-                fov: from.fov + (to.fov - from.fov) * k });
-    markDirty();
-  } else if (player.t > GLIDE + HOLD) glideTo(TOUR[(tourIndex() + 1) % TOUR.length]);
+  const k = Math.min(1, player.t / player.leg.dur);
+  applyPose(player.leg.at(k));
+  markDirty();
+  if (k >= 1) { player.leg = null; player.t = 0; }
 }
 
 // ---------------------------------------------------------------- dollhouse (roof + ceiling off, angled top view)
@@ -212,7 +255,7 @@ function enterDollhouse(floor = viewFloor()) {
 function exitDollhouse() {
   if (!dollhouseSaved) return;
   [...house.root.children, ...furniture.root.children].forEach((g) => { g.visible = true; });
-  sun.castShadow = true;
+  sun.castShadow = Q.cur.shadows;
   orbit.minDistance = 0;
   camera.position.copy(dollhouseSaved.pos);
   camera.fov = dollhouseSaved.fov;
@@ -276,6 +319,7 @@ function setDayMode(mode) {
   M.led.emissiveIntensity = lit ? 3.0 : 0;
   M.shade.emissiveIntensity = lit ? 0.9 : 0;
   furniture.lamps.forEach((l) => { l.intensity = lit ? l.userData.on : 0; });
+  applyLamps();
   document.querySelectorAll('[data-day]').forEach((b) => b.classList.toggle('on', b.dataset.day === mode));
 }
 
@@ -341,7 +385,7 @@ document.getElementById('btn-next')?.addEventListener('click', () => stepTour(1)
 const roomSelect = document.getElementById('room-select');
 if (roomSelect) {
   roomSelect.innerHTML = TOUR.map((v) => `<option value="${v}">${v.replace(/_/g, ' ')}</option>`).join('');
-  roomSelect.addEventListener('change', () => { const v = roomSelect.value; if (player.on) return glideTo(v); setMode('orbit'); setView(v); });
+  roomSelect.addEventListener('change', () => { const v = roomSelect.value; if (player.on) return goTo(v); setMode('orbit'); setView(v); });
 }
 const planSelect = document.getElementById('plan-select');      // PDF plan sets, newest first; opens in a new tab
 if (planSelect && data.plans) {
@@ -371,6 +415,42 @@ renderer.domElement.addEventListener('webglcontextlost', (e) => {
 });
 renderer.domElement.addEventListener('webglcontextrestored', () => { dirty = true; });
 
+// ---------------------------------------------------------------- quality
+// Hidden lights drop out of the shaders (an unlit point light still costs per pixel). Day: none; dusk: the brightest few.
+function applyLamps() {
+  [...furniture.lamps].sort((a, b) => b.userData.on - a.userData.on).forEach((l, i) => { l.visible = dayMode === 'dusk' && i < Q.cur.lamps; });
+}
+function applyQuality() {
+  renderer.setPixelRatio(Math.min(devicePixelRatio, Q.cur.ratio));
+  composer.setPixelRatio(renderer.getPixelRatio());
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+  if (!dollhouseSaved) sun.castShadow = Q.cur.shadows;
+  applyLamps();
+  const sel = document.getElementById('quality');
+  if (sel) sel.title = `Quality: ${Q.auto ? 'auto, ' : ''}${Q.tier} tier · ${Q.cur.lite ? 'lite' : 'full'} assets · ratio ${Q.cur.ratio}`;
+  markDirty();
+}
+// Auto: median under ~30 fps for 3 s of motion -> post (GTAO is the biggest cost), then shadows, ratio, lamps
+const fps = fpsMonitor(() => {
+  if (!Q.auto) return;
+  const c = Q.cur;
+  if (c.post) c.post = false;
+  else if (c.shadows) c.shadows = false;
+  else if (Math.min(devicePixelRatio, c.ratio) > 1) c.ratio = Math.max(1, c.ratio - 0.25);
+  else if (c.lamps > 0 && dayMode === 'dusk') c.lamps = c.lamps > 4 ? 4 : 0;
+  else return;
+  console.info('quality: stepped down', JSON.stringify(c));
+  applyQuality();
+});
+document.getElementById('quality')?.addEventListener('change', (e) => {
+  const v = e.target.value;
+  Q.auto = v === 'auto';
+  Q.tier = Q.auto ? detected : v;
+  Q.cur = { ...TIERS[Q.tier], lite: Q.cur.lite, decor: Q.cur.decor };   // models already loaded stay as they are
+  applyQuality();
+});
+
 renderer.setAnimationLoop(() => {
   clock.update();
   const dt = Math.min(clock.getDelta(), 0.05);
@@ -382,7 +462,9 @@ renderer.setAnimationLoop(() => {
     ui.photoInfo.textContent = `Photo mode · ${photo.samples()} samples · move to exit`;
     return;
   }
-  if (dirty || walk.enabled) { composer.render(); dirty = false; }
+  const busy = dirty || walk.enabled;
+  if (busy) { if (Q.cur.post) composer.render(); else renderer.render(scene, camera); dirty = false; }
+  fps(performance.now(), busy);
 });
 
 setView(current.view);
@@ -391,6 +473,11 @@ const touch = matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoin
 document.body.classList.toggle('touch', touch);
 if (params.get('tour') === '1' || (params.get('hud') !== '0' && touch)) playTour(true);   // phones: start the guided tour
 if (params.get('hud') === '0') document.body.classList.add('nohud');
+const qsel = document.getElementById('quality');
+if (qsel) qsel.value = Q.auto ? 'auto' : Q.tier;
+applyQuality();
 ui.loader?.remove();
 setStatus('');
-window.APP = { THREE, scene, camera, renderer, data, setView, setMode, setDayMode, stepTour, photo, walk, ready: true };
+window.APP = { THREE, scene, camera, renderer, data, setView, setMode, setDayMode, stepTour, photo, walk, player, playTour, orbit, quality: Q, applyQuality, ready: true };
+// the shell is usable now; furniture streams in behind it
+furniture.ready.then(() => { applyQuality(); setDayMode(dayMode); window.APP.furnished = true; });

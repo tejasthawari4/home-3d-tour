@@ -2,7 +2,7 @@
 // here is sized by `tile` = metres covered by one repeat.
 import * as THREE from 'three';
 
-const TEX = 'assets/textures/';
+let TEX = 'assets/textures/';
 const loader = new THREE.TextureLoader();
 let aniso = 8;
 const pending = [];
@@ -69,7 +69,8 @@ async function largeTile() {
   return new THREE.MeshStandardMaterial({ map, roughnessMap: rmap, roughness: 1, metalness: 0, envMapIntensity: 1 });
 }
 
-export async function createMaterials(renderer) {
+export async function createMaterials(renderer, lite = false) {
+  if (lite) TEX = 'assets/lite/textures/';
   aniso = renderer.capabilities.getMaxAnisotropy();
   const M = {
     // architecture (names match plan/export material names)

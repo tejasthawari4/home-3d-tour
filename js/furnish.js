@@ -20,12 +20,23 @@ function dequantize(geo) {
   }
 }
 
-export async function furnish(data, M, onProgress = () => {}) {
-  const kinds = [...new Set(data.items.filter((i) => i.kind.startsWith('glb:')).map((i) => i.kind.slice(4)))];
-  const models = {};
+// Returns the (empty) floor groups at once; procedural props are placed now and each GLB kind streams in as it
+// loads, so the house is usable before the furniture arrives. `ready` resolves when everything is placed.
+// opts: dir = model folder (full or lite), skip = RegExp of GLB kinds to leave out (small decor on low-end devices).
+export function furnish(data, M, onProgress = () => {}, { dir = 'assets/models/', skip = null } = {}) {
+  const items = data.items.filter((i) => !(skip && i.kind.startsWith('glb:') && skip.test(i.kind)));
+  const kinds = [...new Set(items.filter((i) => i.kind.startsWith('glb:')).map((i) => i.kind.slice(4)))];
   let done = 0;
-  await Promise.all(kinds.map(async (k) => {
-    const g = await loader.loadAsync(`assets/models/${k}.glb`);
+  const root = new THREE.Group();
+  root.name = 'furniture';
+  const floors = {};                                   // furn_GF / furn_FF / furn_ROOF, so views can hide floors
+  for (const f of ['GF', 'FF', 'ROOF']) root.add(floors[f] = Object.assign(new THREE.Group(), { name: `furn_${f}` }));
+  const byId = {};
+  // Decorative/task lights: every item with lamp = [dx, dy, dz] (ft, in the item's own frame) gets a warm
+  // 2700 K point light there. Off by day; app.js switches them on at dusk. No shadows (1 GB VRAM budget).
+  const lamps = [];
+  const ready = Promise.all(kinds.map(async (k) => {
+    const g = await loader.loadAsync(`${dir}${k}.glb`);
     g.scene.traverse((o) => {
       if (o.isMesh) {
         dequantize(o.geometry);
@@ -38,22 +49,14 @@ export async function furnish(data, M, onProgress = () => {}) {
         });
       }
     });
-    models[k] = g.scene;
+    items.filter((it) => it.kind === `glb:${k}`).forEach((it) => place(it, g.scene));
     onProgress(++done / kinds.length);
   }));
 
-  const root = new THREE.Group();
-  root.name = 'furniture';
-  const floors = {};                                   // furn_GF / furn_FF / furn_ROOF, so views can hide floors
-  for (const f of ['GF', 'FF', 'ROOF']) root.add(floors[f] = Object.assign(new THREE.Group(), { name: `furn_${f}` }));
-  const byId = {};
-  // Decorative/task lights: every item with lamp = [dx, dy, dz] (ft, in the item's own frame) gets a warm
-  // 2700 K point light there. Off by day; app.js switches them on at dusk. No shadows (1 GB VRAM budget).
-  const lamps = [];
-  for (const it of data.items) {
+  function place(it, model) {
     let obj;
-    if (it.kind.startsWith('glb:')) {
-      obj = models[it.kind.slice(4)].clone(true);
+    if (model) {
+      obj = model.clone(true);
       const s = Array.isArray(it.s) ? it.s : [it.s, it.s, it.s];
       obj.scale.set(s[0], s[1], s[2]);
       obj.traverse((o) => {
@@ -86,5 +89,6 @@ export async function furnish(data, M, onProgress = () => {}) {
     floors[it.floor || 'FF'].add(wrap);
     byId[it.id] = wrap;
   }
-  return { root, byId, lamps };
+  items.filter((it) => !it.kind.startsWith('glb:')).forEach((it) => place(it));
+  return { root, byId, lamps, ready };
 }

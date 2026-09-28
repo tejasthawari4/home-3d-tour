@@ -23,9 +23,9 @@
   #btn-photo { color: #ffe2b8; }
   #tour-label { padding: 8px 4px; color: var(--muted); font-size: 12px; min-width: 130px; text-align: center; }
   #room-select { font: inherit; color: var(--ink); background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line); border-radius: 9px; padding: 7px 8px; }
-  #plan-select { font: inherit; color: var(--ink); background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line); border-radius: 9px; padding: 7px 8px; }
+  #plan-select, #quality { font: inherit; color: var(--ink); background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line); border-radius: 9px; padding: 7px 8px; }
   #btn-play { color: #ffe2b8; font-weight: 600; }
-  #room-select option, #plan-select option { background: #221f1c; color: var(--ink); }
+  #room-select option, #plan-select option, #quality option { background: #221f1c; color: var(--ink); }
   #photo-info { top: 16px; right: 16px; padding: 8px 12px; background: var(--glass); border: 1px solid var(--line); border-radius: 10px; font-size: 12px; }
   #loader { position: fixed; inset: 0; display: grid; place-items: center; background: #151311; z-index: 5; }
   #status { color: var(--muted); }
@@ -39,7 +39,7 @@
     #bar .sep { display: none; }
     #tour-label { order: -1; flex-basis: 100%; min-width: 0; padding: 2px 4px 0; }
     button { padding: 10px 12px; min-height: 40px; }
-    #room-select, #plan-select { min-height: 40px; max-width: 42vw; }
+    #room-select, #plan-select, #quality { min-height: 40px; max-width: 42vw; }
   }
   /* touch screens: no keyboard for Walk, and path-traced Photo is too heavy for a phone GPU */
   body.touch [data-mode="walk"], body.touch #btn-photo { display: none; }
@@ -81,6 +81,7 @@
   <button data-day="dusk">Dusk</button>
   <div class="sep"></div>
   <button id="btn-photo">Photo</button>
+  <select id="quality" title="Quality"><option value="auto">Quality: Auto</option><option value="high">High</option><option value="mid">Mid</option><option value="low">Low</option></select>
 </nav>
 <script type="module" src="js/app.js"></script>
 </body>
