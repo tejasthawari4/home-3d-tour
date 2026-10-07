@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scheme B C3 - Gym + Residence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+  :root { --ink: #f4efe7; --muted: #b9b0a3; --glass: rgba(24, 22, 20, 0.62); --line: rgba(255, 255, 255, 0.12); --accent: #d9a35b; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #111; color: var(--ink); font: 14px/1.4 Inter, system-ui, sans-serif; overflow: hidden; }
+  #stage, #stage canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  .hud { position: fixed; z-index: 2; }
+  #title { top: 16px; left: 16px; padding: 10px 14px; background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--line); border-radius: 12px; }
+  #title b { font-weight: 600; letter-spacing: 0.01em; }
+  #title span { display: block; color: var(--muted); font-size: 12px; }
+  #bar { bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--line); border-radius: 14px; max-width: calc(100vw - 32px); overflow-x: auto; }
+  #bar .sep { width: 1px; background: var(--line); margin: 4px 2px; }
+  button { font: inherit; color: var(--ink); background: transparent; border: 0; padding: 8px 12px; border-radius: 9px; cursor: pointer; white-space: nowrap; }
+  button:hover { background: rgba(255, 255, 255, 0.08); }
+  button.on { background: rgba(217, 163, 91, 0.2); color: #ffe2b8; }
+  #btn-photo { color: #ffe2b8; }
+  #tour-label { padding: 8px 4px; color: var(--muted); font-size: 12px; min-width: 130px; text-align: center; }
+  #room-select { font: inherit; color: var(--ink); background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line); border-radius: 9px; padding: 7px 8px; }
+  #plan-select, #quality { font: inherit; color: var(--ink); background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line); border-radius: 9px; padding: 7px 8px; }
+  #btn-play { color: #ffe2b8; font-weight: 600; }
+  #room-select option, #plan-select option, #quality option { background: #221f1c; color: var(--ink); }
+  #photo-info { top: 16px; right: 16px; padding: 8px 12px; background: var(--glass); border: 1px solid var(--line); border-radius: 10px; font-size: 12px; }
+  #loader { position: fixed; inset: 0; display: grid; place-items: center; background: #151311; z-index: 5; }
+  #status { color: var(--muted); }
+  body.nohud .hud { display: none !important; }
+  /* phones: the bar wraps into rows across the bottom; bigger touch targets */
+  @media (max-width: 760px) {
+    #title { top: calc(10px + env(safe-area-inset-top)); left: 10px; right: 10px; padding: 8px 12px; }
+    #title span { font-size: 11px; }
+    #bar { left: 8px; right: 8px; transform: none; bottom: calc(8px + env(safe-area-inset-bottom)); max-width: none;
+           flex-wrap: wrap; justify-content: center; overflow: visible; }
+    #bar .sep { display: none; }
+    #tour-label { order: -1; flex-basis: 100%; min-width: 0; padding: 2px 4px 0; }
+    button { padding: 10px 12px; min-height: 40px; }
+    #room-select, #plan-select, #quality { min-height: 40px; max-width: 42vw; }
+  }
+  /* touch screens: no keyboard for Walk, and path-traced Photo is too heavy for a phone GPU */
+  body.touch [data-mode="walk"], body.touch #btn-photo { display: none; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/",
+    "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/",
+    "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.9.15/src/index.js",
+    "three-gpu-pathtracer": "https://cdn.jsdelivr.net/npm/three-gpu-pathtracer@0.0.24/src/index.js",
+    "xatlas-web": "https://cdn.jsdelivr.net/npm/xatlas-web@0.1.0/+esm"
+  }
+}
+</script>
+</head>
+<body>
+<div id="stage"></div>
+<div id="loader"><div id="status">Loading…</div></div>
+<div id="title" class="hud"><b>Scheme B · variant C3</b><span>Gym floors + family house · preliminary, from plan_b01.py</span></div>
+<div id="photo-info" class="hud" hidden></div>
+<nav id="bar" class="hud">
+  <button id="btn-play" title="Guided tour of the whole house">▶ Tour</button>
+  <button id="btn-prev" title="Previous stop (Left arrow)">&lsaquo; Prev</button>
+  <span id="tour-label"></span>
+  <button id="btn-next" title="Next stop (Right arrow)">Next &rsaquo;</button>
+  <select id="room-select" title="Jump to a room"></select>
+  <select id="plan-select" title="Open a plan set (PDF)"></select>
+  <div class="sep"></div>
+  <button data-mode="orbit" class="on">Orbit</button>
+  <button data-mode="walk">Walk</button>
+  <button data-mode="dollhouse">Dollhouse</button>
+  <button data-floor="GF" title="Dollhouse: ground floor (stilt)">GF</button>
+  <button data-floor="FF" title="Dollhouse: first floor (gym 1)">FF</button>
+  <button data-floor="SF" title="Dollhouse: second floor (gym 2)">SF</button>
+  <button data-floor="TF" title="Dollhouse: third floor (house)">TF</button>
+  <button data-floor="ROOF" title="Dollhouse: terrace">Roof</button>
+  <div class="sep"></div>
+  <button data-day="day" class="on">Day</button>
+  <button data-day="dusk">Dusk</button>
+  <div class="sep"></div>
+  <button id="btn-photo">Photo</button>
+  <select id="quality" title="Quality"><option value="auto">Quality: Auto</option><option value="high">High</option><option value="mid">Mid</option><option value="low">Low</option></select>
+</nav>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><title>gym props</title>
+<style>html,body{margin:0;background:#777b80}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GYM_KINDS, buildGymProp } from './js/gym_props.js';
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(innerWidth, innerHeight); r.shadowMap.enabled = true;
+document.body.appendChild(r.domElement);
+const sc = new THREE.Scene(); sc.background = new THREE.Color(0x777b80);
+sc.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;   // procedural, not an HDRI
+sc.environmentIntensity = 0.7; r.toneMapping = THREE.ACESFilmicToneMapping; sc.add(new THREE.HemisphereLight(0xffffff, 0x888888, 0.35));
+const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(-20, 40, 30); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 40, bottom: -40, far: 150 }); sc.add(sun);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: 0x9a978f })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
+const Q = new URLSearchParams(location.search), only = Q.get('only'), cm = (Q.get('cam') || '').split(',').map(Number);
+const sized = { rubber_tile_zone: { w: 8, d: 6 }, yoga_mat: { w: 2, d: 6, color: '#2a7f8f' }, mirror_wall: { w: 10 }, locker_bank: { w: 8 }, ballet_barre: { w: 8 } };
+const W = { power_rack: 9, cable_crossover: 11, smith_machine: 9, locker_bank: 9, rubber_tile_zone: 9, mirror_wall: 11, lifting_platform: 9, dumbbell_rack: 7, dumbbell_tower: 6, kettlebell_rack: 6.5, trainer_desk: 6.5, wall_ball_rack: 5.5, leg_press: 5.5, chest_press: 5.5, lat_pulldown: 5.5, ballet_barre: 9, foam_roller: 3.5, stacked_mats: 3, floor_dumbbells: 3, two_wheeler: 3, scooter: 3 };
+const kinds = only ? only.split(',').map((k) => 'gym:' + k) : GYM_KINDS, per = only ? kinds.length : 8;
+const rows = []; for (let i = 0; i < kinds.length; i += per) rows.push(kinds.slice(i, i + per));
+let t0 = performance.now(), nrows = rows.length;
+rows.forEach((row, ri) => { let x = 0; const g = new THREE.Group();
+  row.forEach((k) => { const n = k.slice(4), w = W[n] || 4.5, o = buildGymProp(k, { ...(sized[n] || {}) }, THREE); o.position.set(x + w / 2, 0, 0); o.rotation.y = only ? +(Q.get('ry') || 0.5) : 0.5; g.add(o); x += w + 0.8; });
+  g.position.set(-x / 2, 0, ri * -13); sc.add(g); });
+const cam = new THREE.PerspectiveCamera(only ? 28 : 34, innerWidth / innerHeight, 0.5, 600);
+if (cm.length === 6) { cam.position.set(cm[0], cm[1], cm[2]); cam.lookAt(cm[3], cm[4], cm[5]); } else { cam.position.set(0, 46, 36); cam.lookAt(0, 0, -6 * (nrows - 1)); }
+r.render(sc, cam); const pk = {}; sc.traverse((o) => { if (o.isMesh && o.parent.name.startsWith('gym:')) pk[o.parent.name] = (pk[o.parent.name] || 0) + o.geometry.index.count / 3; });
+window.READY = { per: pk, ms: performance.now() - t0, tris: r.info.render.triangles, calls: r.info.render.calls };
+</script>
